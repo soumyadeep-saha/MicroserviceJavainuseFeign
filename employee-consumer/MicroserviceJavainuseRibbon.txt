@@ -1,0 +1,250 @@
+MicroserviceJavainuseRibbon
+Spring Cloud- Netflix Eureka + Ribbon Simple Example
+Input
+employee-consumer, employee-producer, eureka-server form MicroserviceJavainuseRegistrationAll
+
+We make use of Netflix Ribbon for Client Side Load Balancing
+
+In the client side(employee consumer) we decide which instance of employee producer we have to call
+
+Add instanceId to start the same application in multiple port with unique id to recognise, client will call either of the 2 producer module that we have started
+
+
+
+
+
+What is Load Balancing? Need for Netflix Ribbon
+In computing, load balancing improves the distribution of workloads across multiple computing resources, such as computers, a computer cluster, network links, central processing units, or disk drives. Load balancing aims to optimize resource use, maximize throughput, minimize response time, and avoid overload of any single resource. Using multiple components with load balancing instead of a single component may increase reliability and availability through redundancy. Load balancing usually involves dedicated software or hardware, such as a multilayer switch or a Domain Name System server process.
+
+In previous posts we developed two services employee-producer and employee-consumer. Suppose other modules are also calling and consuming employee-producer module services. So the load at employee-producer is high. To deal with this we this we deploy multiple instances of employee-producer. Suppose two in this case. Now we will have to use a Load Balancer to route any incoming requests to either one of these two services.
+
+Start the Eureka server module we developed in the previous tutorial.
+We will now be modifying the employee-producer and employee-consumer modules we developed previously
+
+Code changes for employee producer-
+n the application.properties add the instance id as follows-
+server.port=8092
+eureka.client.serviceUrl.defaultZone=http://localhost:8761/eureka
+spring.application.name=employee-producer
+eureka.instance.instanceId=${spring.application.name}:${random.value}
+
+We need to start the employee-producer instance twice. So start the employee-producer instance the first time.
+It will start on the default port 8092.
+
+Next in application.properties add the port as 8082 and start the employee-producer again.
+eureka.client.serviceUrl.defaultZone=http://localhost:8761/eureka
+server.port=8082
+
+So now we have two instances of employee producer running, one on port 8092 and the other on 8082.
+If we go to eureka server url http://localhost:8761/ we can see both instances of employee-producer registered.
+
+
+Code changes for employee-consumer module
+Modify the pom.xml to include the spring cloud ribbon starter dependency
+<dependency>
+	<groupId>org.springframework.cloud</groupId>
+	<artifactId>spring-cloud-starter-ribbon</artifactId>
+</dependency>
+
+Next modify the ConsumerControllerClient code. Previously we were autowiring an DiscoveryClient bean, replace it with LoadBalancerClient
+
+@Autowired
+	private LoadBalancerClient loadBalancer;
+	
+	public void getEmployee() throws RestClientException, IOException {
+		
+		ServiceInstance serviceInstance=loadBalancer.choose("employee-producer");
+		
+		System.out.println(serviceInstance.getUri());
+		
+		String baseUrl=serviceInstance.getUri().toString();
+		
+		baseUrl=baseUrl+"/employee";
+		
+The load balancer will now call either of instances of employee-producer service depending on its internal algorithm to perform load balancing. Start the employee-consumer module.
+
+
+
+Spring Cloud- Netflix Eureka + Ribbon Simple Example
+
+
+In this post we make use of Netflix Ribbon for Client Side Load Balancing. In previous posts we made use of Netflix component Eureka for service registry and discovery. 
+
+Spring Cloud - Table Of Contents
+
+
+Microservice Registration and Discovery with Spring cloud using Netflix Eureka- Part 1.
+Microservice Registration and Discovery with Spring cloud using Netflix Eureka - Part 2.
+Microservice Registration and Discovery with Spring cloud using Netflix Eureka - Part 3.
+Microservice Registration and Discovery with Spring cloud using Netflix Eureka - Part 4.
+Spring Cloud- Netflix Eureka + Ribbon Simple Example
+Spring Cloud- Netflix Eureka + Ribbon + Hystrix Fallback Simple Example
+Spring Cloud- Netflix Hystrix Circuit Breaker Simple Example
+Spring Cloud- Netflix Feign REST Client Simple Example
+Spring Cloud- Netflix Zuul +Eureka Simple Example
+Spring Cloud Config Server using Native Mode Simple Example
+Spring Cloud Config Server Using Git Simple Example
+Spring Boot Admin Simple Example
+Spring Cloud Stream Tutorial - Publish Message to RabbitMQ Simple Example
+Spring Cloud Stream Tutorial - Consume Message from RabbitMQ Simple Example
+Spring Cloud Tutorial - Publish Events Using Spring Cloud Bus
+Spring Cloud Tutorial - Stream Processing Using Spring Cloud Data Flow
+What is Load Balancing? Need for Netflix Ribbon
+
+In computing, load balancing improves the distribution of workloads across multiple computing resources, such as computers, a computer cluster, network links, central processing units, or disk drives. Load balancing aims to optimize resource use, maximize throughput, minimize response time, and avoid overload of any single resource. Using multiple components with load balancing instead of a single component may increase reliability and availability through redundancy. Load balancing usually involves dedicated software or hardware, such as a multilayer switch or a Domain Name System server process.
+In previous posts we developed two services employee-producer and employee-consumer. Suppose other modules are also calling and consuming employee-producer module services. So the load at employee-producer is high. To deal with this we this we deploy multiple instances of employee-producer. Suppose two in this case. Now we will have to use a Load Balancer to route any incoming requests to either one of these two services.
+
+Video
+
+This tutorial is explained in the below Youtube Video.
+
+
+
+ 
+Lets Begin-
+
+Start the Eureka server module we developed in the previous tutorial.
+We will now be modifying the employee-producer and employee-consumer modules we developed previously.
+
+ 
+Code changes for employee producer-
+
+In the application.properties add the instance id as follows-
+spring.application.name=employee-producer
+eureka.instance.instanceId=:
+
+We need to start the employee-producer instance twice. So start the employee-producer instance the first time.
+It will start on the default port 8080.
+Next in application.properties add the port as 8081 and start the employee-producer again.
+eureka.client.serviceUrl.defaultZone=http://localhost:8090/eureka
+server.port=8081
+
+So now we have two instances of employee producer running, one on port 8080 and the other on 8081.
+If we go to eureka server url http://localhost:8090/ we can see both instances of employee-producer registered.
+Code changes for employee-consumer module
+
+Modify the pom.xml to include the spring cloud ribbon starter dependency
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>com.javainuse</groupId>
+	<artifactId>employee-consumer</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>jar</packaging>
+
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>1.4.1.RELEASE</version>
+		<relativePath /> <!-- lookup parent from repository -->
+	</parent>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<java.version>1.8</java.version>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-eureka</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-ribbon</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+	</dependencies>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-dependencies</artifactId>
+				<version>Camden.SR6</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+
+</project>
+
+
+ 
+Next modify the ConsumerControllerClient code. Previously we were autowiring an DiscoveryClient bean, replace it with LoadBalancerClient
+package com.javainuse.controllers;
+
+import java.io.IOException;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
+import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
+@Controller
+public class ConsumerControllerClient {
+	
+	@Autowired
+	private LoadBalancerClient loadBalancer;
+	
+	public void getEmployee() throws RestClientException, IOException {
+		
+		ServiceInstance serviceInstance=loadBalancer.choose("employee-producer");
+		
+		System.out.println(serviceInstance.getUri());
+		
+		String baseUrl=serviceInstance.getUri().toString();
+		
+		baseUrl=baseUrl+"/employee";
+		
+		RestTemplate restTemplate = new RestTemplate();
+		ResponseEntity<String> response=null;
+		try{
+		response=restTemplate.exchange(baseUrl,
+				HttpMethod.GET, getHeaders(),String.class);
+		}catch (Exception ex)
+		{
+			System.out.println(ex);
+		}
+		System.out.println(response.getBody());
+	}
+
+	private static HttpEntity<?> getHeaders() throws IOException {
+		HttpHeaders headers = new HttpHeaders();
+		headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
+		return new HttpEntity<>(headers);
+	}
+}
+
+The load balancer will now call either of instances of employee-producer service depending on its internal algorithm to perform load balancing. Start the employee-consumer module.
+
+Download Source Code
+Download it -
+Employee Consumer Service with Netlix Ribbon
+Eureka Service
+Employee Producer Service
